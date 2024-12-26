@@ -67,14 +67,13 @@ send and receive network packets. This is done with a Java Socket.
 
 Next steps: 
 
-Implement the read of the result set 
-read operations.
+* \[Done\] Implement unit tests using the actual PostgreSQL JDBC driver as a `reference` or `valid` way to get data from the database and compare the results with LocoPostgres
+* Improve documentation (specially javadocs)
+* Implement the read of the result set 
+* read operations.
+* Implement authentication methods other than md5
+* getData (?)
+* getTime (?)
+* getTimestamp (?)
+* Implement prepared statemens, and the parse-bind-execute packets in the postgres protocol
 
-getData (?)
-getTime (?)
-getTimestamp (?)
-
-Implement prepared statemens, and the parse-bind-execute packets in the postgres protocol
-
-Implement unit tests using the actual PostgreSQL JDBC driver as a `reference` or `valid` way 
-to get data from the database and compare the results with LocoPostgres

@@ -13,14 +13,25 @@ public class LocoResultSet implements ResultSet {
     private LocoNetwork locoNetwork;
     private LocoRowDescription locoRowDescription;
     private Packet lastPacketFromServer;
+    private boolean empty = false;
 
     public LocoResultSet(LocoNetwork locoNetwork, LocoRowDescription locoRowDescription) {
         this.locoNetwork = locoNetwork;
         this.locoRowDescription = locoRowDescription;
+        if (locoNetwork == null && locoRowDescription == null) {
+            this.empty = true;
+        }
+    }
+
+    public static LocoResultSet emptyResultSet() {
+        return new LocoResultSet(null, null);
     }
 
     @Override
     public boolean next() throws SQLException {
+        if (this.empty) {
+            return false;
+        }
         this.lastPacketFromServer = this.locoNetwork.readFromServer();
         if (this.lastPacketFromServer.getPacketType() == PacketType.BACKEND_COMMAND_COMPLETE) {
             return false;

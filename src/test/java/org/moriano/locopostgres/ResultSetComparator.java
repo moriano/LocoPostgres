@@ -41,6 +41,9 @@ public class ResultSetComparator {
             morePostgresResults = postgres.next();
         } while (moreLocoResults || morePostgresResults);
 
+        loco.close();
+        postgres.close();
+
         return sameResult;
     }
 

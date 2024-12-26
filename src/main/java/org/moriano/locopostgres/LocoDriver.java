@@ -44,17 +44,21 @@ public class LocoDriver implements Driver {
         String password = properties.getProperty("password");
         String database = properties.getProperty("database");
 
+        // Jdbc url looks like jdbc:loco:postgresql://localhost:32829/testdb
+        String host = s.split("//")[1].split(":")[0];
+        int port = Integer.valueOf(s.split("//")[1].split(":")[1].split("/")[0]);
         if (user == null && password == null) {
             throw new SQLException("Cannot connect unless i have a username and a password");
         }
 
         Packet startupPacket = Packet.startupMessage(user, database);
         try {
-            LocoNetwork locoNetwork = new LocoNetwork("localhost", 5432);
+            LocoNetwork locoNetwork = new LocoNetwork(host, port);
 
 
             locoNetwork.sendPacketToServer(startupPacket);
-            byte byteIdFromServer = locoNetwork.readOneByte();
+            Packet serverPacket = locoNetwork.readFromServer();
+            byte byteIdFromServer = serverPacket.getPacketContents()[0];
 
             char idChar = ByteUtil.asChar(byteIdFromServer);
             if (idChar == 'R') {
@@ -62,11 +66,6 @@ public class LocoDriver implements Driver {
                 This is an authentication message, there are multiple authentication messages and they cannot just
                 be determined by the id byte, extra analysis is required
                  */
-                byte[] packetRawSize = locoNetwork.readNBytes(4);
-                int packetSize = ByteUtil.getInt32(packetRawSize) - 4;
-                byte[] packetContents = locoNetwork.readNBytes(packetSize);
-                byte[] fullServerPacket = ByteUtil.concat(new byte[]{byteIdFromServer}, packetRawSize, packetContents);
-                Packet serverPacket = Packet.fromBytes(fullServerPacket);
 
                 if (serverPacket.getPacketType() == PacketType.BACKEND_AUTHENTICATION_MD5_PASSWORD) {
                     /*

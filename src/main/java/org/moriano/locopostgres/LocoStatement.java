@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.sql.*;
 import java.util.List;
+import java.util.Set;
 
 public class LocoStatement implements Statement {
 
@@ -24,10 +25,16 @@ public class LocoStatement implements Statement {
     public ResultSet executeQuery(String s) throws SQLException {
         Packet packet = Packet.query(s);
         this.locoNetwork.sendPacketToServer(packet);
-        Packet rowDescription = this.locoNetwork.readUntilPacketType(PacketType.BACKEND_ROW_DESCRIPTION);
-        LocoRowDescription locoRowDescription = new LocoRowDescription(rowDescription);
-        this.locoResultSet = new LocoResultSet(this.locoNetwork, locoRowDescription);
-        return locoResultSet;
+        Packet serverPacket = this.locoNetwork.readUntilPacketTypes(Set.of(PacketType.BACKEND_ROW_DESCRIPTION, PacketType.BACKEND_READY_FOR_QUERY));
+        if (serverPacket.getPacketType() == PacketType.BACKEND_ROW_DESCRIPTION) {
+            Packet rowDescription = serverPacket;
+            LocoRowDescription locoRowDescription = new LocoRowDescription(rowDescription);
+            this.locoResultSet = new LocoResultSet(this.locoNetwork, locoRowDescription);
+            return locoResultSet;
+        } else {
+            return LocoResultSet.emptyResultSet();
+        }
+
     }
 
     @Override
@@ -95,9 +102,24 @@ public class LocoStatement implements Statement {
 
     }
 
+    /**
+     *
+     * @param s
+     * @return true if the first result is a ResultSet object; false if it is an update count or there are no results
+     * @throws SQLException
+     */
     @Override
     public boolean execute(String s) throws SQLException {
-        return false;
+        Packet packet = Packet.query(s);
+        this.locoNetwork.sendPacketToServer(packet);
+        Packet serverPacket = this.locoNetwork.readUntilPacketTypes(Set.of(PacketType.BACKEND_ROW_DESCRIPTION, PacketType.BACKEND_READY_FOR_QUERY));
+        if (serverPacket.getPacketType() == PacketType.BACKEND_ROW_DESCRIPTION) {
+            boolean result = true;
+            this.locoNetwork.readUntilPacketType(PacketType.BACKEND_READY_FOR_QUERY);
+            return result;
+        } else {
+            return false;
+        }
     }
 
     @Override
