@@ -66,8 +66,38 @@ public class LocoDriver implements Driver {
                 This is an authentication message, there are multiple authentication messages and they cannot just
                 be determined by the id byte, extra analysis is required
                  */
+                if (serverPacket.getPacketType() == PacketType.BACKEND_AUTHENTICATION_SASL) {
+                    /*
+                    We must authenticate using the SCRAM SHA 256 approach.
 
-                if (serverPacket.getPacketType() == PacketType.BACKEND_AUTHENTICATION_MD5_PASSWORD) {
+                    This is defined in the RFC-7677
+                    https://datatracker.ietf.org/doc/html/rfc7677
+                     */
+                    throw new SQLException("LocoPostgres does not support SHA 256 authentication yet");
+                }
+                else if (serverPacket.getPacketType() == PacketType.BACKEND_AUTHENTICATION_CLEARTEXT_PASSWORD) {
+                    /*
+                     This is a plain text password authentication mechanism.
+
+                     Pretty simply, we just need to send the password in plain text (yes, scary!) to the server
+                     and await for a response
+                     */
+                    Packet passwordPacket = Packet.passwordMessage(password.getBytes());
+                    locoNetwork.sendPacketToServer(passwordPacket);
+                    serverPacket = locoNetwork.readFromServer();
+                    if (serverPacket.getPacketType() == PacketType.BACKEND_AUTHENTICATION_OK) {
+                        /*
+                        At this point, we just need to read packets from the server until the server tells us it is
+                        ready for query
+                         */
+                        locoNetwork.waitUntilReadyForQuery();
+
+                        result = new LocoConnection(locoNetwork);
+                    } else {
+                        throw new SQLException("Something crashed!, packet was " + serverPacket);
+                    }
+                }
+                else if (serverPacket.getPacketType() == PacketType.BACKEND_AUTHENTICATION_MD5_PASSWORD) {
                     /*
                     We need to perform md5 authentication here. As per the official docs
 
@@ -108,7 +138,7 @@ public class LocoDriver implements Driver {
                         throw new SQLException("Something crashed!, packet was " + serverPacket);
                     }
                 } else {
-                    throw new SQLException("Cannot proceed, this driver only supports md5 type authentication");
+                    throw new SQLException("Cannot proceed, this driver only supports md5 and clear text passsword authentication");
                 }
             }
 
