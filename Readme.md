@@ -15,25 +15,25 @@ every single packet that is sent and received from the server.
 
 # FAQ
 
-1. What is LocoPostgres?
+### 1. What is LocoPostgres?
 
 LocoPostgres is a JDBC driver for PosgreSQL database. It also works with AWS Redshift, as 
 Redshift uses the same protocol. 
 
-2. Why should I use LocoPostgres instead of the official PostgreSQL driver?
+### 2. Why should I use LocoPostgres instead of the official PostgreSQL driver?
 
 You should not! If you want to connect to PostgreSQL or Redshift you should either use the 
 official PostgreSQL driver or the RedshiftJDBC driver (in the case of Redshift). LocoPostgres 
 is, by no means, a replacement for those.
 
-3. Why did you write LocoPostgres?
+### 3. Why did you write LocoPostgres?
 
 Mainly due to curiosity, but also literally because I can :). 
 
 As part of my job I ended up learning the PostgreSQL protocol and I wonder whether I could
 write a JDBC driver just for fun.
 
-4. What makes LocoPostgres special?
+### 4. What makes LocoPostgres special?
 
 I have decided to use NO dependencies in this code except Log4j. This means that I am not even 
 using some of the basic Apache Commons libraries. The reason for this is that I want to simply 
@@ -48,7 +48,9 @@ this makes this driver very convenient if you want to simply study the protocol.
 
 ## Usage
 
-TODO
+To establish a connection you must use a url that looks like `jdbc:loco:postgresql` instead of `jdbc:postgresql`, 
+this is actually not compliant with the actual PostgreSQL protocol, and it is done on purpose. Essentially I am trying 
+to prevent anybody from using LocoPostgres in a production environment by mistake.
 
 ## Code structure
 
@@ -67,13 +69,14 @@ send and receive network packets. This is done with a Java Socket.
 
 Next steps: 
 
-* \[Done\] Implement unit tests using the actual PostgreSQL JDBC driver as a `reference` or `valid` way to get data from the database and compare the results with LocoPostgres
+* [DONE] Implement unit tests using the actual PostgreSQL JDBC driver as a `reference` or `valid` way to get data from 
+the database and compare the results with LocoPostgres
 * Improve documentation (specially javadocs)
-* Implement the read of the result set 
+* [DONE] Implement the read of the result set
+* [DONE] Implement batch methods for statement 
 * read operations.
 * Implement authentication methods other than md5
-* getData (?)
-* getTime (?)
-* getTimestamp (?)
+    * [DONE] Implement clear text password
+    * Implement SCRAM SHA 256 
 * Implement prepared statemens, and the parse-bind-execute packets in the postgres protocol
 

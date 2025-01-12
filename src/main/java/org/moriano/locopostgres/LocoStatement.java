@@ -1,10 +1,13 @@
 package org.moriano.locopostgres;
 
+import org.apache.logging.log4j.core.tools.picocli.CommandLine;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -15,6 +18,13 @@ public class LocoStatement implements Statement {
         this.locoNetwork = locoNetwork;
     }
     private ResultSet locoResultSet;
+
+    /**
+     * Represents the current list of commands that this Statement will execute.
+     *
+     * This is mainly used by the batch operations
+     */
+    private List<String> sqlCommands = new ArrayList<>();
 
     @Override
     public long getLargeUpdateCount() throws SQLException {
@@ -172,17 +182,33 @@ public class LocoStatement implements Statement {
 
     @Override
     public void addBatch(String s) throws SQLException {
-
+        this.sqlCommands.add(s);
     }
 
     @Override
     public void clearBatch() throws SQLException {
-
+        this.sqlCommands.clear();
     }
 
     @Override
     public int[] executeBatch() throws SQLException {
-        return new int[0];
+        Packet multipleQueryPacket = Packet.query(this.sqlCommands);
+        this.locoNetwork.sendPacketToServer(multipleQueryPacket);
+
+        /*
+        Need to keep reading until we have a ready for query result.
+         */
+        List<Packet> receivedPackets = new ArrayList<>();
+        this.locoNetwork.readUntilPacketType(PacketType.BACKEND_READY_FOR_QUERY, Set.of(PacketType.BACKEND_COMMAND_COMPLETE), receivedPackets);
+        int[] results = new int[this.sqlCommands.size()];
+        for (int i = 0; i< receivedPackets.size(); i++) {
+            Packet receivedPacket = receivedPackets.get(i);
+            CommandComplete commandComplete = CommandComplete.fromCommandCompletePacket(receivedPacket);
+            results[i] = commandComplete.getDeletedRows() + commandComplete.getInsertedRows() + commandComplete.getUpdatedRows();
+        }
+        this.sqlCommands.clear();
+
+        return results;
     }
 
     @Override

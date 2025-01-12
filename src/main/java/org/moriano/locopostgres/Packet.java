@@ -1,6 +1,8 @@
 package org.moriano.locopostgres;
 
+import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Represents a Packet that is exchanged with the server.
@@ -127,6 +129,119 @@ public class Packet {
         byte[] result = ByteUtil.concat(ByteUtil.asBytes("Q"), sizeAsBytes, sqlAsBytes);
         return new Packet(PacketType.FRONTEND_QUERY,
                 result);
+
+    }
+
+    /**
+     * Prepares a simple protocol query packet that contains multiple statements.
+     *
+     * Unlike simple query messages, each of the statemens must be separated by ';'
+     *
+     * Remember that each statement must be terminated by byte 0x00
+     * @param sqls
+     * @return
+     */
+    public static Packet query(List<String> sqls) {
+        int totalSize = 4; // The total size must include an int32
+        byte[] sqlsAsBytes = new byte[]{};
+        for (String sql : sqls) {
+            totalSize += sql.length();
+
+            if (sql.charAt(sql.length()-1) != ';') {
+                totalSize += 1;
+                sqlsAsBytes = ByteUtil.concat(sqlsAsBytes, sql.getBytes(Charset.defaultCharset()), new byte[]{";".getBytes()[0]});
+            } else {
+                sqlsAsBytes = ByteUtil.concat(sqlsAsBytes, sql.getBytes(Charset.defaultCharset()));
+            }
+        }
+        sqlsAsBytes = ByteUtil.concat(sqlsAsBytes, new byte[]{0x00});
+        totalSize += 1;
+
+
+        byte[] result = ByteUtil.concat(ByteUtil.asBytes("Q"), ByteUtil.asBytes(totalSize), sqlsAsBytes);
+        return new Packet(PacketType.FRONTEND_QUERY, result);
+
+    }
+
+    /**
+     * Used as part of the SASL authentication process. This packet is what the client must sent to
+     * the server after the server indicates that it uspports SASL authentication.
+     *
+     * This packet informs the server about which specific SASL authentication mechanism it wants to
+     * use.
+     * @return
+     */
+    public static Packet saslInitialResponse(String saslAuthMechanism) {
+        /*
+        Structure
+
+        Id byte is 'p'
+        int32 with the message size
+        String with the name of the SASL auth mechanism to use
+        int32 length of the SASL mechanism specific "Initial client response" that follows or -1 if there is no
+                initial response
+        Byte(n) SASL mechanism specific "Initial response"
+         */
+
+        /*
+        Here is a valid packet sent from the postgres driver
+
+        0000   70 00 00 00 37 53 43 52 41 4d 2d 53 48 41 2d 32   p...7SCRAM-SHA-2
+        0010   35 36 00 00 00 00 21 6e 2c 2c 6e 3d 2a 2c 72 3d   56....!n,,n=*,r=
+        0020   34 2a 65 78 4e 4f 24 30 3a 39 77 25 6d 37 6c 61   4*exNO$0:9w%m7la
+        0030   4c 31 50 49 2e 5d 28 49                           L1PI.](I
+
+        Server response
+
+        0000   52 00 00 00 5c 00 00 00 0b 72 3d 34 2a 65 78 4e   R...\....r=4*exN
+        0010   4f 24 30 3a 39 77 25 6d 37 6c 61 4c 31 50 49 2e   O$0:9w%m7laL1PI.
+        0020   5d 28 49 79 71 49 76 2b 74 49 68 37 4f 74 75 75   ](IyqIv+tIh7Otuu
+        0030   71 4b 78 45 66 68 73 50 4d 42 33 2c 73 3d 76 76   qKxEfhsPMB3,s=vv
+        0040   4b 52 32 52 5a 51 4f 48 30 72 53 6c 63 6b 53 2f   KR2RZQOH0rSlckS/
+        0050   74 65 56 51 3d 3d 2c 69 3d 34 30 39 36            teVQ==,i=4096
+
+
+        Client request
+
+        0000   52 00 00 00 5c 00 00 00 0b 72 3d 34 2a 65 78 4e   R...\....r=4*exN
+        0010   4f 24 30 3a 39 77 25 6d 37 6c 61 4c 31 50 49 2e   O$0:9w%m7laL1PI.
+        0020   5d 28 49 79 71 49 76 2b 74 49 68 37 4f 74 75 75   ](IyqIv+tIh7Otuu
+        0030   71 4b 78 45 66 68 73 50 4d 42 33 2c 73 3d 76 76   qKxEfhsPMB3,s=vv
+        0040   4b 52 32 52 5a 51 4f 48 30 72 53 6c 63 6b 53 2f   KR2RZQOH0rSlckS/
+        0050   74 65 56 51 3d 3d 2c 69 3d 34 30 39 36            teVQ==,i=4096
+
+        Server response (Auth completed)
+
+        0000   52 00 00 00 36 00 00 00 0c 76 3d 50 45 71 36 53   R...6....v=PEq6S
+        0010   6b 6a 38 49 4d 66 48 33 62 65 47 46 32 66 57 67   kj8IMfH3beGF2fWg
+        0020   56 57 56 35 6c 5a 4b 47 47 41 7a 4c 69 5a 44 51   VWV5lZKGGAzLiZDQ
+        0030   51 6d 6b 75 4b 6f 3d                              QmkuKo=
+
+
+        And this is the one i am building
+
+       +--------------------------------------------------+----------------------------------+------------------+
+       | 00 01 02 03 04 05 06 07 08 09 0A 0B C0 D0 E0 0F  | 0 1 2 3 4 5 6 7 8 9 A B C D E F  |      Ascii       |
++------+--------------------------------------------------+----------------------------------+------------------+
+| 0000 | 70 00 00 00 18 53 43 52 41 4D 2D 53 48 41 2D 32  | p . . . . S C R A M . S H A . 2  | p....SCRAM.SHA.2 |
+| 0001 | 35 36 00 00 FF FF FF FF 00                       | 5 6 . . . . . . .                | 56.......        |
++------+--------------------------------------------------+----------------------------------+------------------+
+
+         */
+
+
+
+
+        byte[] idByte = ByteUtil.asBytes("p");
+
+        byte[] mechanismAsBytes = ByteUtil.concat(saslAuthMechanism.getBytes(), new byte[]{0x00});
+        byte[] initialResponse = "n,,n=*,r=random".getBytes();
+
+        byte[] sizeAsBytes = ByteUtil.asBytes(mechanismAsBytes.length + 4 + 4 + initialResponse.length);
+
+        byte[] result = ByteUtil.concat(idByte, sizeAsBytes, mechanismAsBytes, ByteUtil.asBytes(initialResponse.length), initialResponse);
+
+        return new Packet(PacketType.FRONTEND_SASL_INITIAL_RESPONSE, result);
 
     }
 

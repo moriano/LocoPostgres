@@ -52,7 +52,7 @@ public class LocoResultSetTest {
      */
     @Container
     private static final PostgresTestContainer postgresForOfficial =
-            new PostgresTestContainer("postgres:15.3", DB_NAME, USER, PASSWORD, PostgresAuthMethod.MD5);
+            new PostgresTestContainer("postgres:15.3", DB_NAME, USER, PASSWORD, PostgresAuthMethod.SCRAM_SHA_256);
 
 
 

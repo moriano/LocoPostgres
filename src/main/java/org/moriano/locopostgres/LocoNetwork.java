@@ -74,12 +74,44 @@ public class LocoNetwork {
         }
     }
 
+    /**
+     * Keeps reading from the server until a packer of type #packetType is received
+     * @param packetType
+     * @return
+     * @throws SQLException
+     */
     public Packet readUntilPacketType(PacketType packetType) throws SQLException {
         PacketType backendPacketType = null;
         Packet serverPacket = null;
         do {
             serverPacket = this.readFromServer();
             backendPacketType = PacketType.backendPacketTypeFromByte(serverPacket.getPacketContents()[0]);
+        } while (backendPacketType != packetType);
+        return serverPacket;
+    }
+
+    /**
+     * Reads until the server sends a packet of type packetType, the parameter receivedPackets will be modified
+     * and will contain each of the packets received until then, unless they are of type packetTypesToIgnore
+     *
+     * Be careful when using this method, as it will sore all matching received packets in memory until a packetType
+     * is received. Specifically if you use this method while processing a query result that could potentially store
+     * many (millions?) of results, you want to make sure that you send a sensible filter of packets to ignore.
+     * @param packetType
+     * @ packetTypesToIgnore
+     * @param receivedPackets
+     * @return
+     * @throws SQLException
+     */
+    public Packet readUntilPacketType(PacketType packetType, Set<PacketType> packetTypesToIgnore, List<Packet> receivedPackets) throws SQLException {
+        PacketType backendPacketType = null;
+        Packet serverPacket = null;
+        do {
+            serverPacket = this.readFromServer();
+            backendPacketType = PacketType.backendPacketTypeFromByte(serverPacket.getPacketContents()[0]);
+            if (packetTypesToIgnore.contains(backendPacketType)) {
+                receivedPackets.add(serverPacket);
+            }
         } while (backendPacketType != packetType);
         return serverPacket;
     }

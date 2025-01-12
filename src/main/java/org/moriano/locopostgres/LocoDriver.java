@@ -72,7 +72,25 @@ public class LocoDriver implements Driver {
 
                     This is defined in the RFC-7677
                     https://datatracker.ietf.org/doc/html/rfc7677
+
+                    Also, we need to read
+                    https://datatracker.ietf.org/doc/html/rfc5802
                      */
+                    byte[] backendAuthSASLBytes = serverPacket.getPacketContents();
+                    /*
+                    Remember, this packet structure is
+
+                    id byte (p)
+                    int32 with length of message
+                    int32 with number 10 (indicates this is a sasl)
+                    String with the name of the SASL auth mechanism
+                     */
+                    byte[] authenticationMechanism = Arrays.copyOfRange(backendAuthSASLBytes, 9, backendAuthSASLBytes.length-1);
+
+                    Packet saslInitialRequest = Packet.saslInitialResponse(new String(authenticationMechanism));
+
+                    locoNetwork.sendPacketToServer(saslInitialRequest);
+                    locoNetwork.readFromServer();
                     throw new SQLException("LocoPostgres does not support SHA 256 authentication yet");
                 }
                 else if (serverPacket.getPacketType() == PacketType.BACKEND_AUTHENTICATION_CLEARTEXT_PASSWORD) {

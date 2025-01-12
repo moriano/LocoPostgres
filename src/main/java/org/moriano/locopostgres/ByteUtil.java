@@ -56,9 +56,14 @@ public class ByteUtil {
         for (byte raw : raws) {
 
             String niceByte = String.format("%02X ", raw);
-            String niceString = new String(new byte[]{raw}, StandardCharsets.UTF_8);
-            char myChar = niceString.charAt(0);
-            if (!Character.isDigit(myChar) && !Character.isLetter(myChar)) {
+            String niceString = new String(new byte[]{raw}, StandardCharsets.US_ASCII);
+            if (!(raw >=0x21 && raw <= 0x7E)) {
+                /*
+                As per the ascii table.
+
+                Characters that are not printable are assigned a dot, so that the printing of the array
+                of bytes makes sense to the human eye
+                 */
                 niceString = ".";
             }
 
