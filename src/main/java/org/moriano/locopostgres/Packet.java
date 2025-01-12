@@ -137,7 +137,9 @@ public class Packet {
      *
      * Unlike simple query messages, each of the statemens must be separated by ';'
      *
-     * Remember that each statement must be terminated by byte 0x00
+     * The end of the packet must be signaled by a 0x00 byte. Notice that in this packet we
+     * do NOT separate each of the statements using 0x00, that is only used to signify the end
+     * of the packet. Each of the statements is separated by ';'
      * @param sqls
      * @return
      */
