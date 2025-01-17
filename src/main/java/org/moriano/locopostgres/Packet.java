@@ -105,6 +105,28 @@ public class Packet {
     }
 
     /**
+     * Creates a cancel request.
+     *
+     * Remember that this type of object is to be sent from a completely new connection
+     * @param processId
+     * @param secretKey
+     * @return
+     */
+    public static Packet cancelRequest(int processId, int secretKey) {
+        /*
+        Format is
+
+        1st byte 'F'
+        int32 with the size (fixed to 16)
+        int32 fixed to 80877102 (which in hex is) 0x1 0x2 0x3 0x4 0x5 0x6 0x7 0x8
+        int32 processId
+        int32 secretkey
+         */
+        byte[] rawValues = ByteUtil.concat(ByteUtil.asBytes(16), ByteUtil.asBytes(80877102), ByteUtil.asBytes(processId), ByteUtil.asBytes(secretKey));
+        return new Packet(PacketType.FRONTEND_CANCEL_REQUEST, rawValues);
+    }
+
+    /**
      * Prepares a password message to authenticate against the server
      *
      * @return
@@ -380,6 +402,54 @@ public class Packet {
 
     public byte[] getPacketContents() {
         return packetContents;
+    }
+
+
+    /**
+     * Assuming that this is a BACKEND_KEY_DATA packet, extract it.
+     * @return
+     */
+    public BackendKeyData getBackendKeyData() {
+        if (this.packetType != PacketType.BACKEND_KEY_DATA) {
+            throw new RuntimeException("You cannot get the backend key data from this packet! " + this);
+        }
+        /*
+        The packet looks like this
+
+        1 byte for the packet id
+        int32 with packet length
+        int32 with process id
+        int32 with secret key
+         */
+
+        int processId = ByteUtil.getInt32(Arrays.copyOfRange(this.packetContents, 5, 9));
+        int secretKey = ByteUtil.getInt32(Arrays.copyOfRange(this.packetContents, 9, 13));
+        return new BackendKeyData(processId, secretKey);
+    }
+
+    /**
+     * Assuming that this is a BACKEND_PARAMETER_STATUS packet, extract the parameter status
+     * @return
+     */
+    public ParameterStatus getParameterStatus() {
+        if (this.packetType != PacketType.BACKEND_PARAMETER_STATUS) {
+            throw new RuntimeException("You cannot get parameter status from this packet " + this);
+        }
+        /*
+        Packet parameter status look like
+
+        1st byte to indicate type
+        int32 with the length
+        String (terminated by 0x00) with the name
+        String (terminated by 0x00 with the value
+         */
+
+        List<String> strings = ByteUtil.asStrings(Arrays.copyOfRange(this.packetContents, 5, this.packetContents.length));
+        // we expect EXACTLY two values here, otherwise fail
+        if (strings.size() != 2) {
+            throw new RuntimeException("Issues processing packet " + this + " we expected two params but got " + strings.size());
+        }
+        return new ParameterStatus(strings.get(0), strings.get(1));
     }
 
     /**

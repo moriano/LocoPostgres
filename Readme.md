@@ -74,9 +74,11 @@ the database and compare the results with LocoPostgres
 * Improve documentation (specially javadocs)
 * [DONE] Implement the read of the result set
 * [DONE] Implement batch methods for statement 
+* [DONE] Implement query execution cancel
+* Pass all the unit tests
 * read operations.
 * Implement authentication methods other than md5
     * [DONE] Implement clear text password
     * Implement SCRAM SHA 256 
-* Implement prepared statemens, and the parse-bind-execute packets in the postgres protocol
+* Implement prepared statements, and the parse-bind-execute packets in the postgres protocol
 

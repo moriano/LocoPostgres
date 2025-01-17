@@ -1,6 +1,8 @@
 package org.moriano.locopostgres;
 
 import org.apache.logging.log4j.core.tools.picocli.CommandLine;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,9 +15,12 @@ import java.util.Set;
 
 public class LocoStatement implements Statement {
 
+    private static final Logger log = LoggerFactory.getLogger(LocoStatement.class);
     private LocoNetwork locoNetwork;
-    public LocoStatement(LocoNetwork locoNetwork) {
+    private final LocoConnection locoConnection;
+    public LocoStatement(LocoNetwork locoNetwork, LocoConnection locoConnection) {
         this.locoNetwork = locoNetwork;
+        this.locoConnection = locoConnection;
     }
     private ResultSet locoResultSet;
 
@@ -94,6 +99,36 @@ public class LocoStatement implements Statement {
 
     @Override
     public void cancel() throws SQLException {
+        /*
+        To cancel a running statement in postgres, we MUST create a NEW connection.
+
+        Read that again. The reason is to avoid the server to have to constantly check whether a query is cancelled
+        within a connection.
+
+        The new connection will simply send the cancel query directly WITHOUT any startup message at all.
+
+        The new connection needs to contain the process id and the secret key required to cancel the query, this
+        information is given to the client during connection establishment (see BACKEND_KEY_DATA packet).
+
+        As per the protocol, the client has NO WAY to tell whether the request cancel has
+        succeeded.
+
+        Also, as per the protocol, there is no response to this message, instead the server will process it and
+        close the connection.
+         */
+        LocoNetwork cancelNetwork = null;
+        try {
+            cancelNetwork = new LocoNetwork(this.locoNetwork.getHost(), this.locoNetwork.getPort());
+            BackendKeyData backendKeyData = this.locoConnection.getBackendKeyData();
+            Packet cancelRequest = Packet.cancelRequest(backendKeyData.getProcessId(), backendKeyData.getSecretKey());
+            cancelNetwork.sendPacketToServer(cancelRequest);
+        } catch (IOException e) {
+            throw new SQLException("Ouch! problems while sending the cancel request");
+        } finally {
+            if (cancelNetwork != null) {
+                cancelNetwork.cleanupResources();
+            }
+        }
 
     }
 
@@ -213,7 +248,7 @@ public class LocoStatement implements Statement {
 
     @Override
     public Connection getConnection() throws SQLException {
-        return null;
+        return this.locoConnection;
     }
 
     @Override

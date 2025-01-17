@@ -5,8 +5,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.*;
-import java.util.Arrays;
-import java.util.Properties;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -108,9 +107,9 @@ public class LocoDriver implements Driver {
                         At this point, we just need to read packets from the server until the server tells us it is
                         ready for query
                          */
-                        locoNetwork.waitUntilReadyForQuery();
+                        BackendDataAndParameterStatus backendDataAndParameterStatus = processPacketsAfterAuthenticationOK(locoNetwork);
 
-                        result = new LocoConnection(locoNetwork);
+                        result = new LocoConnection(locoNetwork, backendDataAndParameterStatus.backendKeyData, backendDataAndParameterStatus.parameterStatuses);
                     } else {
                         throw new SQLException("Something crashed!, packet was " + serverPacket);
                     }
@@ -149,9 +148,9 @@ public class LocoDriver implements Driver {
                         At this point, we just need to read packets from the server until the server tells us it is
                         ready for query
                          */
-                        locoNetwork.waitUntilReadyForQuery();
+                        BackendDataAndParameterStatus backendDataAndParameterStatus = processPacketsAfterAuthenticationOK(locoNetwork);
 
-                        result = new LocoConnection(locoNetwork);
+                        result = new LocoConnection(locoNetwork, backendDataAndParameterStatus.backendKeyData, backendDataAndParameterStatus.parameterStatuses);
                     } else {
                         throw new SQLException("Something crashed!, packet was " + serverPacket);
                     }
@@ -166,6 +165,35 @@ public class LocoDriver implements Driver {
         }
 
         return result;
+    }
+
+    /**
+     * This method is to be called after we get an BACKEND_AUTHENTICATION_OK, it will take care of parsing all the
+     * relevant packets that we receive until we get a READY_FOR_QUERY message.
+     *
+     * During that time, the server will send us packets that we need to store, for example the BACKEND_KEY_DATA which
+     * is useful for cancelling queries as well as a number of configuration values
+     */
+    BackendDataAndParameterStatus processPacketsAfterAuthenticationOK(LocoNetwork locoNetwork) throws SQLException {
+        Set<PacketType> relevantPacketTypes = Set.of(PacketType.BACKEND_KEY_DATA, PacketType.BACKEND_PARAMETER_STATUS);
+        List<Packet> receivedPackets = new ArrayList<>();
+        locoNetwork.readUntilPacketType(PacketType.BACKEND_READY_FOR_QUERY, relevantPacketTypes, receivedPackets);
+
+        List<ParameterStatus> parameterStatuses = new ArrayList<>();
+        BackendKeyData backendKeyData = null;
+        for (Packet receivedPacket : receivedPackets) {
+            if (receivedPacket.getPacketType() == PacketType.BACKEND_KEY_DATA) {
+                backendKeyData = receivedPacket.getBackendKeyData();
+            } else if (receivedPacket.getPacketType() == PacketType.BACKEND_PARAMETER_STATUS) {
+                /*
+                The parameter status packet is composed of
+                1 byte for the packet type
+                 */
+                parameterStatuses.add(receivedPacket.getParameterStatus());
+            }
+        }
+
+        return new BackendDataAndParameterStatus(backendKeyData, parameterStatuses);
     }
 
 
@@ -212,5 +240,20 @@ public class LocoDriver implements Driver {
     @Override
     public java.util.logging.Logger getParentLogger() throws SQLFeatureNotSupportedException {
         return null;
+    }
+
+    /**
+     * A convenient class to bundle together the Backend data and parameter status.
+     */
+    private class BackendDataAndParameterStatus {
+        final BackendKeyData backendKeyData;
+        final List<ParameterStatus> parameterStatuses;
+
+        public BackendDataAndParameterStatus(BackendKeyData backendKeyData, List<ParameterStatus> parameterStatuses) {
+            this.backendKeyData = backendKeyData;
+            this.parameterStatuses = parameterStatuses;
+        }
+
+
     }
 }

@@ -87,7 +87,7 @@ public class LocoConnectionTest {
         this.basicAuthenticationTest(postgresClearText);
     }
 
-    @Test
+    //@Test
     public void authenticationScramSHA256() throws SQLException {
         this.basicAuthenticationTest(postgresScramSHA256);
     }

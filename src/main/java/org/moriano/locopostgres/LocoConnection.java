@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.sql.*;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
@@ -15,14 +16,31 @@ public class LocoConnection implements Connection {
 
     private LocoNetwork locoNetwork;
 
+    /**
+     * Used to cancel queries
+     */
+    private final BackendKeyData backendKeyData;
 
-    public LocoConnection(LocoNetwork locoNetwork) {
+    private final List<ParameterStatus> parameterStatusList;
+
+
+    public LocoConnection(LocoNetwork locoNetwork, BackendKeyData backendKeyData, List<ParameterStatus> parameterStatusList) {
         this.locoNetwork = locoNetwork;
+        this.backendKeyData = backendKeyData;
+        this.parameterStatusList = parameterStatusList;
+    }
+
+    public BackendKeyData getBackendKeyData() {
+        return backendKeyData;
+    }
+
+    public List<ParameterStatus> getParameterStatusList() {
+        return parameterStatusList;
     }
 
     @Override
     public Statement createStatement() throws SQLException {
-        return new LocoStatement(this.locoNetwork);
+        return new LocoStatement(this.locoNetwork, this);
     }
 
     @Override

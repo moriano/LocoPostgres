@@ -4,6 +4,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * A set of utility methods to deal with arrays of bytes.
@@ -37,6 +40,23 @@ public class ByteUtil {
 
     public static Character asChar(byte raw) {
         return new String(new byte[]{raw}, StandardCharsets.UTF_8).charAt(0);
+    }
+
+    /**
+     * Extract strings from this array of bytes. Strings are terminated by byte 0x00 as per the postgres protocol
+     * @param raw
+     * @return
+     */
+    public static List<String> asStrings(byte[] raw) {
+        int startStringIdx = 0;
+        List<String> result = new ArrayList<>();
+        for(int i = 0; i<raw.length; i++) {
+            if (raw[i] == 0x00) {
+                result.add(new String(Arrays.copyOfRange(raw, startStringIdx,i), StandardCharsets.UTF_8));
+                startStringIdx = i+1;
+            }
+        }
+        return result;
     }
 
     public static char[] asCharArray(byte[] raw) {

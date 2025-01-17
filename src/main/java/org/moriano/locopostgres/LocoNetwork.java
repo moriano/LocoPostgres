@@ -8,7 +8,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -17,12 +16,53 @@ public class LocoNetwork {
     private Socket socket;
     private InputStream inputStream;
     private OutputStream outputStream;
+    private final String host;
+    private final int port;
 
     public LocoNetwork(String host, int port) throws IOException  {
 
         socket = new Socket(host, port);
         inputStream = socket.getInputStream();
         outputStream = socket.getOutputStream();
+        this.host = host;
+        this.port = port;
+    }
+
+    public String getHost() {
+        return host;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    /**
+     * Closes all network resources. After calling this method, this object can no longer be used
+     */
+    public void cleanupResources() {
+        try {
+            if (this.inputStream != null) {
+                this.inputStream.close();
+            }
+        } catch (Exception e) {
+            log.error("Could not close the inputstream!", e);
+        }
+
+        try {
+            if (this.outputStream != null) {
+                this.outputStream.close();
+            }
+        } catch (Exception e) {
+            log.error("Could not close the outputstream!", e);
+        }
+
+        try {
+            if (this.socket != null) {
+                this.socket.close();
+            }
+        } catch (Exception e) {
+            log.error("Could not close the socket!", e);
+        }
     }
 
     public Packet readFromServer() throws SQLException {
