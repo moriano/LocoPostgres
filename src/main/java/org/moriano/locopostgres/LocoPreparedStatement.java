@@ -16,55 +16,32 @@ public class LocoPreparedStatement implements PreparedStatement {
     private LocoResultSet locoResultSet;
     private String statementName;
     private int availableParameters;
-
+    private final Packet parse;
     public LocoPreparedStatement(LocoNetwork locoNetwork, String rawQuery, String statementName) throws SQLException {
         this.locoNetwork = locoNetwork;
-        this.query = this.convertSQLToPostgresFormat(rawQuery);
+        this.query = rawQuery;
         this.statementName = statementName;
-        Packet parse = Packet.parse(this.query, statementName);
-        this.locoNetwork.sendPacketToServer(parse);
-        if(this.locoNetwork.checkIfServerHasData()) {
-            Packet serverResponse = this.locoNetwork.readFromServer();
-            if (serverResponse.getPacketType() == PacketType.BACKEND_ERROR_RESPONSE) {
-                throw new SQLException("Could not proceed, error form server was \n " + serverResponse);
-            }
-        }
+        this.parse = Packet.parse(this.query, statementName);
+
     }
 
     @Override
     public ResultSet executeQuery() throws SQLException {
+        this.locoNetwork.sendPacketToServer(parse);
+        Packet bind = Packet.bind(null, this.statementName, 0, null);
+        this.locoNetwork.sendPacketToServer(bind);
+        Packet describe = Packet.describePortal(null);
+        this.locoNetwork.sendPacketToServer(describe);
+
         Packet execute = Packet.execute(this.statementName);
         this.locoNetwork.sendPacketToServer(execute);
+        this.locoNetwork.sendPacketToServer(Packet.sync());
         Packet rowDescription = this.locoNetwork.readUntilPacketType(PacketType.BACKEND_ROW_DESCRIPTION);
         LocoRowDescription locoRowDescription = new LocoRowDescription(rowDescription);
         this.locoResultSet = new LocoResultSet(this.locoNetwork, locoRowDescription);
         return locoResultSet;
     }
 
-    private String convertSQLToPostgresFormat(String rawSql) {
-        /*
-        remember that in Postgres SQL format, the queries with parameter look like
-        SELECT * FROM foo WHERE blah = $1
-        inste of of
-        SELECT * FROM foo WHERE blah = ?
-
-        So the queries need to be rewritten before we send them to the server
-         */
-        char[] rawChars = rawSql.toCharArray();
-        String sql = "";
-        int parametersSoFar = 0;
-        for(int i = 0; i<rawSql.length(); i++) {
-            char thisChar = rawChars[i];
-            if (thisChar == '?') {
-                parametersSoFar++;
-                sql += "$"+parametersSoFar;
-            } else {
-                sql += thisChar;
-            }
-        }
-        this.availableParameters = parametersSoFar;
-        return sql;
-    }
 
     @Override
     public int executeUpdate() throws SQLException {

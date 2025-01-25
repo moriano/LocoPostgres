@@ -288,11 +288,11 @@ public class Packet {
             int32 object id of the parameter type. Zero means unspecified.
         */
         byte[] sqlAsBytes = ByteUtil.concat(sql.getBytes(), new byte[]{0x00});
-        int size = sqlAsBytes.length + 4 + 2;
+        int size = sqlAsBytes.length + 4 + 2; // string length, plus packet length, plus int16 for param data types
         byte[] result;
         byte[] paramDataTypes = ByteUtil.asBytesInt16(0);
         if (statementName == null) {
-            size += 1;
+            size += 1; // no matter what, we need to send the 0x00 byte for empty string
         } else {
             size = statementName.getBytes().length + 1;
         }
@@ -308,12 +308,64 @@ public class Packet {
     }
 
     /**
+     * Creates a describe command, used for the extended protocol
+     * @return
+     */
+    public static Packet describeStatement(String name) {
+        /*
+        ID byte is 'D'
+        int32 with the size
+        1 byte to indicate whether we want to describe a statement 'S' or a portal 'P'
+        String to indicate the name of the portal or statement to describe
+         */
+        byte[] nameAsBytes = ByteUtil.getZeroByteTerminatedString(name);
+        return new Packet(PacketType.FRONTEND_DESCRIBE,
+                ByteUtil.concat(ByteUtil.asBytes("D"),
+                        ByteUtil.asBytes(4+nameAsBytes.length+1),
+                        new byte[]{'S'},
+                        nameAsBytes
+                ));
+    }
+
+    /**
+     * Creates a sync packet, useful in the extended protocol
+     * @return
+     */
+    public static Packet sync() {
+        /*
+        ID byte is 'S'
+        int32 with the length of the packet, always 4
+         */
+        return new Packet(PacketType.FRONTEND_SYNC, ByteUtil.concat(ByteUtil.asBytes("S"), ByteUtil.asBytes(4)));
+    }
+
+    /**
+     * Creates a describe command, used for the extended protocol
+     * @return
+     */
+    public static Packet describePortal(String name) {
+        /*
+        ID byte is 'D'
+        int32 with the size
+        1 byte to indicate whether we want to describe a statement 'S' or a portal 'P'
+        String to indicate the name of the portal or statement to describe
+         */
+        byte[] nameAsBytes = ByteUtil.getZeroByteTerminatedString(name);
+        return new Packet(PacketType.FRONTEND_DESCRIBE,
+                ByteUtil.concat(ByteUtil.asBytes("D"),
+                        ByteUtil.asBytes(4+nameAsBytes.length+1),
+                        new byte[]{'P'},
+                        nameAsBytes
+                        ));
+    }
+
+    /**
      * Creates a Bind packet, this is useful for the extended protocol mode.
      * @param paramPosition
      * @param value
      * @return
      */
-    public static Packet bind(int paramPosition, byte[] value) {
+    public static Packet bind(String destinationPortal, String sourcePreparedStatement, int paramPosition, byte[] value) {
         /*
         Structure
 
@@ -338,9 +390,22 @@ public class Packet {
         int16[R] the result column format codes. They can be zero (text) or one (binary)
 
          */
-        String destinationPortal = null;
+        int size = 4; // int32 indicating the size of message itself
 
-        return null;
+        byte[] destinationPortalAsBytes = ByteUtil.getZeroByteTerminatedString(destinationPortal);
+        byte[] sourcePreparedStamentAsBytes = ByteUtil.getZeroByteTerminatedString(sourcePreparedStatement);
+        byte[] parameterFormatCodes = ByteUtil.asBytesInt16(0); // TODO Moriano add support for multiple params
+        byte[] parameterValues = ByteUtil.asBytesInt16(0); // TODO MORIANO
+        byte[] resultColumnFormatCodes = ByteUtil.asBytesInt16(0); // TODO MORIANO
+
+        size += destinationPortalAsBytes.length + sourcePreparedStamentAsBytes.length + parameterFormatCodes.length +
+                parameterValues.length + resultColumnFormatCodes.length;
+
+        byte[] result = ByteUtil.concat(ByteUtil.asBytes("B"), ByteUtil.asBytes(size), destinationPortalAsBytes,
+                sourcePreparedStamentAsBytes, parameterFormatCodes, parameterValues, resultColumnFormatCodes);
+
+        return new Packet(PacketType.FRONTEND_BIND, result);
+
     }
 
     /**

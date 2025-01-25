@@ -3,6 +3,7 @@ package org.moriano.locopostgres;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,6 +36,19 @@ public class ByteUtil {
             bytes = new byte[]{0x00, bytes[0]};
         }
         throw new UnsupportedOperationException("TODO moriano need to figure out how to do this conversion");
+    }
+
+    /**
+     * Returns a 0x00 terminated string. This is useful as the postgres protocol terminates strings with the
+     * zero byte
+     * @param value
+     * @return
+     */
+    public static byte[] getZeroByteTerminatedString(String value) {
+        if (value == null) {
+            return new byte[]{0x00}; // A zero byte represents an empty string
+        }
+        return ByteUtil.concat(value.getBytes(StandardCharsets.UTF_8), new byte[]{0x00});
     }
 
 

@@ -18,7 +18,7 @@ public enum PacketType {
     BACKEND_AUTHENTICATION_SASL_FINAL(FrontendOrBackend.BACKEND, 'R'),
     BACKEND_KEY_DATA(FrontendOrBackend.BACKEND, 'K'),
     FRONTEND_BIND(FrontendOrBackend.FRONTED, 'B'),
-    BACKEND_BIND_COMPLETE(FrontendOrBackend.BACKEND, 'B'),
+    BACKEND_BIND_COMPLETE(FrontendOrBackend.BACKEND, '2'),
     FRONTEND_CANCEL_REQUEST(FrontendOrBackend.FRONTED, null),
     FRONTEND_CLOSE(FrontendOrBackend.FRONTED, 'C'),
     BACKEND_CLOSE_COMPLETE(FrontendOrBackend.BACKEND, '3'),
