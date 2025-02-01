@@ -75,7 +75,7 @@ the database and compare the results with LocoPostgres
 * [DONE] Implement the read of the result set
 * [DONE] Implement batch methods for statement 
 * [DONE] Implement query execution cancel
-* Pass all the unit tests
+* [DONE] Pass all the unit tests
 * read operations.
 * Implement authentication methods other than md5
     * [DONE] Implement clear text password

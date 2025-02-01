@@ -70,7 +70,6 @@ public class LocoPreparedStatementTest {
     @Test
     public void testPreparedStatementNoParameters() throws Exception {
         PreparedStatement preparedStatement = this.locoConnection.prepareStatement("SELECT 1 as result;");
-
         ResultSet resultSet = preparedStatement.executeQuery();
         resultSet.next();
         int result = resultSet.getInt("result");

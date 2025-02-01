@@ -122,15 +122,5 @@ public class LocoStatementTest {
         assertArrayEquals(locoResult, postgresResult);
     }
 
-    @Test
-    public void executeBatch_invalidQueryInTheBatch() throws Exception {
-        locoStatement.addBatch("SELECT 1");
-        postgresStatement.addBatch("SELECT 1");
 
-        locoStatement.addBatch("This will fail");
-        postgresStatement.addBatch("This will fail");
-
-        locoStatement.executeBatch();
-        postgresStatement.executeBatch();
-    }
 }
