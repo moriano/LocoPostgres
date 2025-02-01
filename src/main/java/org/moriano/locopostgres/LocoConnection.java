@@ -1,8 +1,6 @@
 package org.moriano.locopostgres;
 
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Socket;
+
 import java.sql.*;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +12,9 @@ import java.util.concurrent.Executor;
  */
 public class LocoConnection implements Connection {
 
+    /**
+     * The object in charge of controlling the network connnections between client and server
+     */
     private LocoNetwork locoNetwork;
 
     /**
@@ -21,6 +22,9 @@ public class LocoConnection implements Connection {
      */
     private final BackendKeyData backendKeyData;
 
+    /**
+     * A list of the parameters returned by the server when a connection is initialized
+     */
     private final List<ParameterStatus> parameterStatusList;
 
 

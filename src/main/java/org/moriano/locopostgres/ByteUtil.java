@@ -3,7 +3,6 @@ package org.moriano.locopostgres;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +23,11 @@ public class ByteUtil {
         return ByteBuffer.wrap(new byte[]{0, 0, bytes[0], bytes[1]}).getInt();
     }
 
+    /**
+     * Gets an Int32 from a byte array
+     * @param bytes
+     * @return
+     */
     public static int getInt32(byte[] bytes) {
         if (bytes.length != 4) {
             throw new RuntimeException("I need exactly 4 bytes to perform an int32 conversion, you gave me " + bytes);
@@ -77,6 +81,11 @@ public class ByteUtil {
         return new String(raw, StandardCharsets.UTF_8).toCharArray();
     }
 
+    /**
+     * Provides a very human readable representation of this array of bytes.
+     * @param raws
+     * @return
+     */
     public static String prettyPrint(byte[] raws) {
         StringBuilder result = new StringBuilder("" +
                 "       +--------------------------------------------------+----------------------------------+------------------+\n" +
@@ -165,7 +174,15 @@ public class ByteUtil {
         return result;
     }
 
-
+    /**
+     * Concatenates a bunch of array bytes into one.
+     *
+     * In normal conditions you will just use a library for this, but LocoPostgres is done in a way in which
+     * we do not use external libraries (this is not practical, of course, it is just the way I decided to do
+     * things :)
+     * @param someBytes
+     * @return
+     */
     public static byte[] concat(byte[]... someBytes) {
         ByteArrayOutputStream outputStream;
         byte[] result = null;

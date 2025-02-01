@@ -8,6 +8,11 @@ import java.sql.*;
 import java.util.Calendar;
 import java.util.Map;
 
+/**
+ * The class providing a a ResultSet implementation.
+ *
+ * In postgres when a query is executed, we need to first read
+ */
 public class LocoResultSet implements ResultSet {
 
     private LocoNetwork locoNetwork;

@@ -13,6 +13,12 @@ JDBC driver just for fun. As there are no external dependencies, the driver
 is a good way to understand the PostgreSQL protocol. Also the driver logs 
 every single packet that is sent and received from the server. 
 
+## Usage
+
+To use loco postgres you will first have to register the driver. To do so do 
+
+`/tmp/locopostgres-debug.log`
+
 # FAQ
 
 ### 1. What is LocoPostgres?
@@ -71,7 +77,7 @@ Next steps:
 
 * [DONE] Implement unit tests using the actual PostgreSQL JDBC driver as a `reference` or `valid` way to get data from 
 the database and compare the results with LocoPostgres
-* Improve documentation (specially javadocs)
+* [DONE] Improve documentation (specially javadocs)
 * [DONE] Implement the read of the result set
 * [DONE] Implement batch methods for statement 
 * [DONE] Implement query execution cancel
@@ -81,4 +87,5 @@ the database and compare the results with LocoPostgres
     * [DONE] Implement clear text password
     * Implement SCRAM SHA 256 
 * Implement prepared statements, and the parse-bind-execute packets in the postgres protocol
+* Fully implement the Statement interface
 

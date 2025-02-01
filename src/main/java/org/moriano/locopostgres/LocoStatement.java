@@ -13,6 +13,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * The {@link Statement} implementation for LocoPostgres.
+ */
 public class LocoStatement implements Statement {
 
     private static final Logger log = LoggerFactory.getLogger(LocoStatement.class);

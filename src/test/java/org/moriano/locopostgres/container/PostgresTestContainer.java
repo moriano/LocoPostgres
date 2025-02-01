@@ -1,8 +1,10 @@
 package org.moriano.locopostgres.container;
 
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.images.builder.Transferable;
 
+/**
+ * A simple way to get a Postgres docker container, it allows to specify how AuthN will work
+ */
 public class PostgresTestContainer extends PostgreSQLContainer {
 
     private final PostgresAuthMethod postgresAuthMethod;

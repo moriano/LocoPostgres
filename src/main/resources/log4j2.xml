@@ -11,11 +11,12 @@
         </File>
     </Appenders>
     <Loggers>
-        <Logger name="org.moriano.locopostgres.LocoNetwork" level="debug" additivity="false">
+        <Logger name="org.moriano.locopostgres.LocoNetwork" level="DEBUG" additivity="false">
             <AppenderRef ref="file" />
         </Logger>
-        <Root level="info">
+        <Root level="INFO">
             <AppenderRef ref="console" />
+            <AppenderRef ref="file" />
         </Root>
     </Loggers>
 </Configuration>

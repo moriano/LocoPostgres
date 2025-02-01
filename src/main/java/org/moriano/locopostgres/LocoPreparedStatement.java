@@ -9,6 +9,18 @@ import java.sql.*;
 import java.util.Calendar;
 import java.util.Set;
 
+/**
+ * The implementation of the PreparedStatement interface.
+ *
+ * This essentially implements the Postgres extended protocol approach. In such approach one sends the following
+ * packets
+ *
+ * 1- Parse: A prepared query that may or may not contain parameters
+ * 2- Bind: A packet specifying the number of parameters of the parse packet
+ * 3- Portal Description
+ * 4- Execute: An actual execution of the query (assuming that the query is correct, etc)
+ * 5- Sync
+ */
 public class LocoPreparedStatement implements PreparedStatement {
 
     private LocoNetwork locoNetwork;

@@ -2,6 +2,12 @@ package org.moriano.locopostgres;
 
 import java.util.List;
 
+/**
+ * A class representing a description of each of the rows returned from the server.
+ *
+ * This is done by having a {@link PacketType#BACKEND_ROW_DESCRIPTION} packet on it, using that we can
+ * determine the number of fields (~columns) available as well as the type of each one of them.
+ */
 public class LocoRowDescription {
 
     private Packet rowDescription;

@@ -4,7 +4,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * Fully copied from the original postgres driver
+ * Fully copied from the original postgres driver.
+ *
+ * This essentially computes the MD5 digest required to perform MD5 based authentication
  */
 public class MD5Digest {
 

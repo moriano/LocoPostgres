@@ -11,6 +11,19 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * This is THE object that controls sending and receiving traffic to and from the server.
+ *
+ * Postgres protocol is defined as arrays of bytes that are sent and received to and from the server.
+ *
+ * The implementation here is not done in an optimal way, instead it is done in a very simple human
+ * readable way. Generally speaking every packet of the protocol is composed by an Id byte followed by
+ * 4 bytes representing an int32 that specifies the length of the packet. This class uses that information
+ * to understand how many more bytes we have to read from the server.
+ *
+ * This class is ready to log every packet that is sent and received to and from the server. The rationale to
+ * log those packets is to facilitate the study of the protocol.
+ */
 public class LocoNetwork {
     private static final Logger log = LogManager.getLogger(LocoNetwork.class);
     private Socket socket;
