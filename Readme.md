@@ -82,10 +82,19 @@ the database and compare the results with LocoPostgres
 * [DONE] Implement batch methods for statement 
 * [DONE] Implement query execution cancel
 * [DONE] Pass all the unit tests
-* read operations.
+    * Regression, as more tests are added
+    * Provided a base method so we can have tests with actual data in a reusable manner
+* [WIP] read operations.
+    * Identified issues when reading arrays of bytes and when reading ts tz ranges
 * Implement authentication methods other than md5
     * [DONE] Implement clear text password
     * Implement SCRAM SHA 256 
 * Implement prepared statements, and the parse-bind-execute packets in the postgres protocol
+    * [DONE] Prepared statement, no parameters
+    * Prepared statement parameters
+        * int, float, double, short
+        * strings
+        * boolean
+    
 * Fully implement the Statement interface
 

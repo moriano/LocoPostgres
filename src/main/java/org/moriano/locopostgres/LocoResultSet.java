@@ -5,6 +5,8 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Map;
 
@@ -73,7 +75,7 @@ public class LocoResultSet implements ResultSet {
             throw new SQLException("The column cannot be represented as a boolean, value was " + new String(rawData));
         } else {
             char value = (char)rawData[0];
-            if (value == '1') {
+            if (value == 't') {
                 return true;
             } else {
                 return false;
@@ -90,11 +92,14 @@ public class LocoResultSet implements ResultSet {
     @Override
     public short getShort(int i) throws SQLException {
         byte[] rawData = this.getRawBytes(i);
-        if (rawData == null) {
-            return 0;
+        int power = 0;
+        short total = 0;
+        char[] chars = ByteUtil.asCharArray(rawData);
+        for (int idx = chars.length - 1; idx >= 0; idx--) {
+            total += Character.getNumericValue(chars[idx]) * Math.pow(10, power);
+            power++;
         }
-
-        return ByteUtil.getShort(rawData);
+        return total;
     }
 
     @Override
@@ -132,14 +137,7 @@ public class LocoResultSet implements ResultSet {
     @Override
     public double getDouble(int i) throws SQLException {
         byte[] rawData = this.getRawBytes(i);
-        int power = 0;
-        double total = 0;
-        char[] chars = ByteUtil.asCharArray(rawData);
-        for (int idx = chars.length - 1; idx >= 0; idx--) {
-            total += Character.getNumericValue(chars[idx]) * Math.pow(10, power);
-            power++;
-        }
-        return total;
+        return Double.valueOf(new String(rawData));
     }
 
     /**
@@ -255,17 +253,32 @@ public class LocoResultSet implements ResultSet {
 
     @Override
     public Date getDate(String s) throws SQLException {
-        return null;
+        byte[] rawDate = this.getBytes(this.findColumnPosition(s));
+        /*
+        This method needs to deal with different cases, specifically it needs to deal with types
+        - Date: Where we receive a date in the form yyyy-mm-dd
+        - DateTime: where we receive a data and a time in the form of yyyy-dd-mm hh:mm:ss
+         */
+        String raw = new String(rawDate);
+        if (raw.length() == 10) { // Assume we are dealing with yyyy-mm-dd
+            LocalDate localDate = LocalDate.parse(raw);
+            return new Date(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli());
+        }
+
+        LocalDateTime localDateTime = LocalDateTime.parse(new String(rawDate), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        return Date.valueOf(localDateTime.toLocalDate());
     }
 
     @Override
     public Time getTime(String s) throws SQLException {
-        return null;
+        byte[] rawTime = this.getBytes(this.findColumnPosition(s));
+        Time result = Time.valueOf(LocalTime.parse(new String(rawTime)));
+        return result;
     }
 
     @Override
     public Timestamp getTimestamp(String s) throws SQLException {
-        return null;
+        throw new SQLException("getTimestamp is not implemented!. Reveived value was " + s);
     }
 
     @Override

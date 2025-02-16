@@ -38,9 +38,9 @@ public final class CommandComplete {
         and the int32 indicating its size
          */
         this.rawData = new String(Arrays.copyOfRange(packet.getPacketContents(), 5, packet.getPacketContents().length-1));
-        this.insertedRows = this.rawData.contains("INSERT") ? Integer.valueOf(this.rawData.substring("INSERT".length()+1)) : 0;
-        this.deletedRows = this.rawData.contains("DELETE") ? Integer.valueOf(this.rawData.substring("DELETE".length()+1)) : 0;
-        this.updatedRows = this.rawData.contains("UPDATE") ? Integer.valueOf(this.rawData.substring("UPDATE".length()+1)) : 0;
+        this.insertedRows = this.rawData.contains("INSERT") ? Integer.valueOf(this.rawData.substring("INSERT".length()+3)) : 0;
+        this.deletedRows = this.rawData.contains("DELETE") ? Integer.valueOf(this.rawData.substring("DELETE".length()+3)) : 0;
+        this.updatedRows = this.rawData.contains("UPDATE") ? Integer.valueOf(this.rawData.substring("UPDATE".length()+3)) : 0;
         if (this.rawData.contains("SELECT") || this.rawData.contains("CREATE TABLE AS")) {
             if (this.rawData.contains("SELECT")) {
                 this.retrievedRows = Integer.valueOf(this.rawData.substring("SELECT".length()+1));

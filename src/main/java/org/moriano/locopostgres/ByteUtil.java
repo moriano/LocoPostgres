@@ -35,12 +35,6 @@ public class ByteUtil {
         return ByteBuffer.wrap(bytes).getInt();
     }
 
-    public static short getShort(byte[] bytes) {
-        if (bytes.length != 2) {
-            bytes = new byte[]{0x00, bytes[0]};
-        }
-        throw new UnsupportedOperationException("TODO moriano need to figure out how to do this conversion");
-    }
 
     /**
      * Returns a 0x00 terminated string. This is useful as the postgres protocol terminates strings with the
