@@ -187,7 +187,7 @@ public class LocoResultSet implements ResultSet {
                 }
                 return result;
             } else {
-                throw new SQLException("Ouch! I cannot process bytes! " + ByteUtil.prettyPrint(rawBytes));
+                return rawBytes;
             }
         }
     }
