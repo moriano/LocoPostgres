@@ -153,7 +153,43 @@ public class LocoResultSet implements ResultSet {
 
     @Override
     public byte[] getBytes(int i) throws SQLException {
-        return this.getRawBytes(i);
+        byte[] rawBytes = this.getRawBytes(i);
+        /*
+        Notice! we cannot simply pass the bytes we read from the response as they are.
+
+        IF they are stored as binary bytes then sure we can go ahead and return whatever is in the packet,
+        otherwise we need to convert the byte type of postgres to the byte type of java
+         */
+        LocoField locoField = this.locoRowDescription.getFieldByPosition(i);
+        if (locoField.isBinaryFormat()) {
+            return rawBytes;
+        } else {
+            /*
+            Lets convert! Binary is expected to follow the format \xSOMEBYTES
+             */
+            if (rawBytes[0] == '\\' && rawBytes[1] == 'x') {
+                /*
+                Convert all bytes except the first two to hexadecimal. The way this works is that we will get the
+                actual bytes represented as hexadecimal values, this means that we will get things like
+                "F0" this means byte[0] is F and byte[1] is 0, we need to put this together as single java byte
+                 */
+                byte[] result = new byte[(rawBytes.length-2)/2];
+                int resultIdx = 0;
+                int rawIdx = 2;
+                while(rawIdx < rawBytes.length) {
+                    char upper = ByteUtil.asChar(rawBytes[rawIdx]);
+                    rawIdx++;
+                    char lower =  ByteUtil.asChar(rawBytes[rawIdx]);
+                    rawIdx++;
+                    String merged = new String(new char[]{upper, lower});
+                    result[resultIdx] = (byte)Integer.parseInt(merged, 16);
+                    resultIdx++;
+                }
+                return result;
+            } else {
+                throw new SQLException("Ouch! I cannot process bytes! " + ByteUtil.prettyPrint(rawBytes));
+            }
+        }
     }
 
     @Override
@@ -253,7 +289,7 @@ public class LocoResultSet implements ResultSet {
 
     @Override
     public Date getDate(String s) throws SQLException {
-        byte[] rawDate = this.getBytes(this.findColumnPosition(s));
+        byte[] rawDate = this.getRawBytes(this.findColumnPosition(s));
         /*
         This method needs to deal with different cases, specifically it needs to deal with types
         - Date: Where we receive a date in the form yyyy-mm-dd
@@ -271,7 +307,7 @@ public class LocoResultSet implements ResultSet {
 
     @Override
     public Time getTime(String s) throws SQLException {
-        byte[] rawTime = this.getBytes(this.findColumnPosition(s));
+        byte[] rawTime = this.getRawBytes(this.findColumnPosition(s));
         Time result = Time.valueOf(LocalTime.parse(new String(rawTime)));
         return result;
     }

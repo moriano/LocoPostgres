@@ -85,7 +85,8 @@ the database and compare the results with LocoPostgres
     * Regression, as more tests are added
     * Provided a base method so we can have tests with actual data in a reusable manner
 * [WIP] read operations.
-    * Identified issues when reading arrays of bytes and when reading ts tz ranges
+    * Identified issues when reading ts tz ranges
+    * [DONE] Identified issue while reading arrays of bytes
 * Implement authentication methods other than md5
     * [DONE] Implement clear text password
     * Implement SCRAM SHA 256 

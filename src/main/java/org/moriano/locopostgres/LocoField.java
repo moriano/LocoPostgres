@@ -102,6 +102,15 @@ public class LocoField {
         return results;
     }
 
+    /**
+     * As per the documentation. Zero means text, One means binary. In a RowDescription returned from the statement
+     * variant of DESCRIBE, the format code is not yet known and will always be zero.
+     * @return
+     */
+    public boolean isBinaryFormat() {
+        return this.formatCode == 1;
+    }
+
     public int getFieldPosition() {
         return fieldPosition;
     }
